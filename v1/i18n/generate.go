@@ -1,4 +1,4 @@
-package go-i18n
+package i18n
 
 import (
 	"fmt"
