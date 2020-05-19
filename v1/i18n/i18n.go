@@ -18,7 +18,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var p printer
+var p printers
 
 // PluralRule is Plural rule
 type PluralRule struct {
@@ -28,50 +28,67 @@ type PluralRule struct {
 	Text  string
 }
 
-type printer struct {
-	session sync.Map
+type printers struct {
+	sessionMap sync.Map
+}
+
+type PrinterSession struct {
+	printer *message.Printer
 }
 
 // Message is translation message
 type Message map[string]string
 
-func RegistPrinter(id string, lang language.Tag) {
-	p.session.Store(id, message.NewPrinter(lang))
+func RegistPrinter(id string, lang language.Tag) *PrinterSession {
+	session := &PrinterSession{printer: message.NewPrinter(lang)}
+	p.sessionMap.Store(id, session)
+
+	return session
 }
 
 func DeletePrinter(id string) {
-	p.session.Delete(id)
+	p.sessionMap.Delete(id)
+}
+
+//Session load session with target id
+func Session(id string) *PrinterSession {
+	p.sessionMap.Load(id)
+	if session, exist := p.sessionMap.Load(id); exist == true {
+		return session.(*PrinterSession)
+	} else {
+		return &PrinterSession{printer: message.NewPrinter(language.AmericanEnglish)}
+	}
 }
 
 // Printf is like fmt.Printf, but using language-specific formatting.
-func Printf(id string, format string, args ...interface{}) {
+func (s *PrinterSession) Printf(format string, args ...interface{}) (n int, err error) {
 	format, args = preArgs(format, args...)
-	if printer, exist := p.session.Load(id); exist == true {
-		printer.(*message.Printer).Printf(format, args...)
-	} else {
-		fmt.Printf(format, args...)
-	}
+	return s.printer.Printf(format, args...)
 }
 
 // Sprintf is like fmt.Sprintf, but using language-specific formatting.
-func Sprintf(id string, format string, args ...interface{}) string {
+func (s *PrinterSession) Sprintf(format string, args ...interface{}) string {
 	format, args = preArgs(format, args...)
-	if printer, exist := p.session.Load(id); exist == true {
-		return printer.(*message.Printer).Sprintf(format, args...)
-	} else {
-		return fmt.Sprintf(format, args...)
-	}
+	return s.printer.Sprintf(format, args...)
 }
 
 // Fprintf is like fmt.Fprintf, but using language-specific formatting.
-func Fprintf(id string, w io.Writer, key message.Reference, a ...interface{}) (n int, err error) {
+func (s *PrinterSession) Fprintf(w io.Writer, key message.Reference, a ...interface{}) (n int, err error) {
 	format, args := preArgs(key.(string), a...)
 	key = message.Reference(format)
-	if printer, exist := p.session.Load(id); exist == true {
-		return printer.(*message.Printer).Fprintf(w, key, args...)
-	} else {
-		return fmt.Fprintf(w, format, args)
-	}
+	return s.printer.Fprintf(w, key, args...)
+}
+
+func Printf(id string, format string, args ...interface{}) (n int, err error) {
+	return Session(id).Printf(format, args...)
+}
+
+func Sprintf(id string, format string, args ...interface{}) string {
+	return Session(id).Sprintf(format, args...)
+}
+
+func Fprintf(id string, w io.Writer, key message.Reference, a ...interface{}) (n int, err error) {
+	return Session(id).Fprintf(w, key, a...)
 }
 
 // Preprocessing parameters in plural form
