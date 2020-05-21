@@ -9,6 +9,35 @@ import (
 	"golang.org/x/text/message"
 )
 
+func TestPrintf(t *testing.T) {
+	message.SetString(language.SimplifiedChinese, "%s has %d cat.", "%s有%d只猫。")
+
+	session := RegistPrinter("test_printf", language.SimplifiedChinese)
+	defer DeletePrinter("test_printf")
+
+	file, err := ioutil.TempFile("", "test")
+	if err != nil {
+		panic(err)
+	}
+	defer os.Remove(file.Name())
+	os.Stdout = file
+
+	if _, err := session.Printf("%s has %d cat.", "tom", 3); err != nil {
+		panic(err)
+	}
+	file.Sync()
+
+	file.Seek(0, 0)
+	str, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	if string(str) != "tom有3只猫。" {
+		t.Errorf("expected %s got %s", "tom有3只猫。", string(str))
+	}
+
+}
+
 func TestSprintf(t *testing.T) {
 	message.SetString(language.SimplifiedChinese, "%s has %d cat.", "%s有%d只猫。")
 
