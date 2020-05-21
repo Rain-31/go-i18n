@@ -40,6 +40,7 @@ func TestFprintf(t *testing.T) {
 	}
 	file.Sync()
 
+	file.Seek(0, 0)
 	str, err := ioutil.ReadAll(file)
 	if err != nil {
 		panic(err)
