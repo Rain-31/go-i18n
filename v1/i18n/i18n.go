@@ -143,7 +143,7 @@ func Plural(cases ...interface{}) []PluralRule {
 	return rules
 }
 
-func unmarshal(id, path string) (*Message, error) {
+func Unmarshal(id, path string) (*Message, error) {
 	result := &Message{}
 	fileExt := strings.ToLower(filepath.Ext(path))
 	if fileExt != ".toml" && fileExt != ".json" && fileExt != ".yaml" {
@@ -179,7 +179,7 @@ func unmarshal(id, path string) (*Message, error) {
 
 }
 
-func marshal(v interface{}, format string) ([]byte, error) {
+func Marshal(v interface{}, format string) ([]byte, error) {
 	switch format {
 	case "json":
 		buffer := &bytes.Buffer{}
